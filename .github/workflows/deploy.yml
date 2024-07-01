@@ -1,0 +1,39 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build project
+      run: npm run build
+
+    - name: Deploy to DigitalOcean Droplet
+      env:
+        HOST: ${{ secrets.DROPLET_IP }}
+        USERNAME: ${{ secrets.DROPLET_USERNAME }}
+        KEY: ${{ secrets.DROPLET_SSH_KEY }}
+      run: |
+        ssh -o StrictHostKeyChecking=no -i $KEY $USERNAME@$HOST << EOF
+          pm2 stop all || true
+          cd /path/to/your/project
+          git pull origin main
+          npm install
+          pm2 start server.js
+          EOF
